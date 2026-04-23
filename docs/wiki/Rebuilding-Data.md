@@ -10,7 +10,7 @@ Output includes:
 
 - `manifest.json`
 - `t-*.json` per translation
-- `lexicon-slim.json` (Strong’s glosses)
+- `lexicon-full.json` (Strong’s Hebrew/Greek dictionary text from Open Scriptures)
 
 ## Verse-of-the-day JSON (`votd-500.json`)
 

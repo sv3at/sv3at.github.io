@@ -48,7 +48,7 @@ describe("manifest schema (static expectations)", () => {
     const m = {
       version: 1,
       translations: [{ id: "kjv", name: "KJV", language: "en", license: "PD", dataFile: "t-kjv.json" }],
-      lexiconFile: "lexicon-slim.json",
+      lexiconFile: "lexicon-full.json",
     };
     expect(validateManifestShape(m)).toEqual([]);
   });
@@ -66,7 +66,7 @@ describe.skipIf(!hasGeneratedBundle)("generated public/bible-data (after npm run
     const kjv = m.translations.find((t) => t.id === "kjv");
     expect(kjv, "kjv entry").toBeTruthy();
     expect(kjv.features).toContain("strongs");
-    expect(m.lexiconFile).toBe("lexicon-slim.json");
+    expect(m.lexiconFile).toBe("lexicon-full.json");
   });
 
   it("t-kjv.json has _strongs and object verse cells in Genesis 1", async () => {

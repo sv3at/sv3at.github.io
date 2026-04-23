@@ -19,7 +19,7 @@ Other translations use **plain string** verses.
 ## In the app
 
 - Strong’s ids link to STEP Bible (`?q=strong=H430` / `G2316`).
-- Plain click opens a short local gloss from `lexicon-slim.json`.
+- Plain click opens the local dictionary dialog (full Open Scriptures fields from `lexicon-full.json`).
 - Ctrl/Cmd-click (or open in new tab) goes to STEP without the dialog.
 
 ## Rebuild

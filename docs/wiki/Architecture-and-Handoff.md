@@ -6,7 +6,7 @@ Snapshot of how the app works today and what to preserve when changing code.
 
 - Offline-first reader; data under `public/bible-data/`.
 - KJV has per-word Strong’s (`{ p, s }` verse cells); other translations use plain string verses.
-- Strong’s chips: local gloss dialog + STEP links.
+- Strong’s chips: local Open Scriptures dictionary dialog + STEP links.
 - Parallel reading: two translations on one page.
 - Parallel Psalms: Synodal vs MT/English chapter mapping when `PSA` is open.
 - Verse highlight mirrors across columns; word highlight is **single-side only**.

@@ -70,8 +70,19 @@ function fromBollsKjvStrongs(rows) {
   return { books, bookOrder: USFM_LIST.map((b) => b.id), _strongs: true };
 }
 
-/** Slim Strong's lexicon (Open Scriptures CC BY-SA). */
-async function buildLexiconSlim() {
+/** Normalize whitespace; keep full text (no truncation). */
+function normLexField(s) {
+  return String(s ?? "")
+    .replace(/\s+/g, " ")
+    .trim();
+}
+
+/**
+ * Full Strong's lexicon fields from Open Scriptures Hebrew/Greek dictionary
+ * scripts (CC BY-SA): lemma, transliteration, optional pronunciation (Hebrew),
+ * derivation, strongs_def, kjv_def — all included when present.
+ */
+async function buildLexiconFull() {
   const gUrl =
     "https://raw.githubusercontent.com/openscriptures/strongs/master/greek/strongs-greek-dictionary.js";
   const hUrl =
@@ -80,27 +91,31 @@ async function buildLexiconSlim() {
   const hJs = await downloadText(hUrl);
   const greek = loadStrongDictionaryScript(gJs);
   const hebrew = loadStrongDictionaryScript(hJs);
-  const slim = {};
+  const full = {};
   const add = (dict) => {
     for (const [k, v] of Object.entries(dict)) {
       if (!v || typeof v !== "object") continue;
-      const def = String(v.strongs_def || v.kjv_def || "")
-        .replace(/\s+/g, " ")
-        .trim()
-        .slice(0, 480);
-      const lemma = String(v.lemma || "")
-        .replace(/\s+/g, " ")
-        .trim();
-      const tr = String(v.translit || v.xlit || "")
-        .replace(/\s+/g, " ")
-        .trim();
-      slim[k] = { l: lemma, t: tr, d: def };
+      const lemma = normLexField(v.lemma);
+      const tr = normLexField(v.translit || v.xlit);
+      const pron = normLexField(v.pron);
+      const sd = normLexField(v.strongs_def);
+      const kd = normLexField(v.kjv_def);
+      const dv = normLexField(v.derivation);
+      /** @type {Record<string, string>} */
+      const o = {};
+      if (lemma) o.l = lemma;
+      if (tr) o.t = tr;
+      if (pron) o.p = pron;
+      if (sd) o.sd = sd;
+      if (kd) o.kd = kd;
+      if (dv) o.dv = dv;
+      if (Object.keys(o).length) full[k] = o;
     }
   };
   add(hebrew);
   add(greek);
-  await writeFile(join(outDir, "lexicon-slim.json"), JSON.stringify(slim), "utf8");
-  console.log("Wrote lexicon-slim.json entries", Object.keys(slim).length);
+  await writeFile(join(outDir, "lexicon-full.json"), JSON.stringify(full), "utf8");
+  console.log("Wrote lexicon-full.json entries", Object.keys(full).length);
 }
 
 // --- thiagodruk: [{ abbrev, book, chapters: [ [v,v], [v,v] ] }] ---
@@ -227,7 +242,7 @@ async function main() {
     about:
       "Derived from bolls.life (bulk JSON), thiagobodruk/bible, seven1m/open-bibles, and openscriptures/strongs (lexicon). Review licenses in each translation entry.",
     translations: [],
-    lexiconFile: "lexicon-slim.json",
+    lexiconFile: "lexicon-full.json",
   };
 
   const bolls = async (slug) => {
@@ -288,7 +303,7 @@ async function main() {
     manifest.translations.push({ id, ...meta, dataFile: fn, source: `Bolls: ${slug}` });
   }
 
-  await buildLexiconSlim();
+  await buildLexiconFull();
 
   // --- 3 thiagodruk (bbe, almeida, rccv) ---
   for (const [id, file, meta] of [

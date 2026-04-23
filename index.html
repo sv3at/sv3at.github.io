@@ -7,6 +7,7 @@
     <link rel="stylesheet" href="/src/style.css" />
   </head>
   <body>
+    <a class="skip-link" href="#main-content">Skip to main content</a>
     <div
       class="gt-corner notranslate"
       title="Translate page (Google)"
@@ -68,7 +69,7 @@
             <button type="button" id="votd-goto" class="btn btn-secondary">Open in reader</button>
           </p>
         </section>
-        <form class="toolbar" id="toolbar" autocomplete="off">
+        <form class="toolbar" id="toolbar" autocomplete="off" aria-label="Reader controls">
           <label class="field field-book">
             <span class="u-label" id="l-book">Book</span>
             <select id="book" name="book" class="notranslate" disabled></select>
@@ -92,12 +93,12 @@
             </div>
             <select id="translation" name="translation" class="notranslate"></select>
           </label>
-          <label class="field field-parallel-row">
+          <label class="field field-parallel-row" for="compare-toggle">
             <span class="u-label" id="l-parallel">Parallel</span>
-            <label class="toggle">
+            <span class="toggle">
               <input type="checkbox" id="compare-toggle" name="compare-toggle" />
               <span class="u-label" id="l-compare-cols">Show two columns</span>
-            </label>
+            </span>
           </label>
           <label class="field field-compare" id="compare-field" hidden>
             <div class="field-compare-top">
@@ -119,31 +120,30 @@
           </div>
         </form>
       </header>
-      <main>
+      <main id="main-content" tabindex="-1">
         <div id="status" class="status app-chrome notranslate" role="status" aria-live="polite" translate="no"></div>
         <article class="passage notranslate" id="passage" hidden>
-          <section class="passage-col">
+          <section class="passage-col" aria-labelledby="ref">
             <h2 class="ref" id="ref"></h2>
             <ol class="verses" id="verses"></ol>
           </section>
-          <section class="passage-col passage-col-compare" id="passage-compare" hidden>
+          <section class="passage-col passage-col-compare" id="passage-compare" hidden aria-labelledby="ref-compare">
             <h2 class="ref" id="ref-compare"></h2>
             <ol class="verses" id="verses-compare"></ol>
           </section>
         </article>
-        <p class="footnote notranslate" id="footnote"></p>
+        <p class="footnote notranslate" id="footnote" role="note"></p>
         <p class="subtitle">
           Entirely offline. Rebuild with <code>npm run build:bible</code>. Full documentation (wiki mirror):
           <a href="https://github.com/sv3at/sv3at.github.io/blob/main/docs/wiki/Home.md">docs/wiki</a>
           · Quick start:
           <a href="https://github.com/sv3at/sv3at.github.io#readme">README</a>
           · Developed by:
-          <a href="https://www.fotw.au">@fotwAU</a>
+          <a href="https://www.fotw.au">@fotwau</a>
         </p>
-
       </main>
     </div>
-    <dialog id="lex-dialog" class="lex-dialog" aria-labelledby="lex-dialog-title">
+    <dialog id="lex-dialog" class="lex-dialog" aria-labelledby="lex-dialog-title" aria-modal="true">
       <div class="lex-dialog-inner">
         <div class="app-chrome notranslate" translate="no">
           <h3 id="lex-dialog-title" class="lex-dialog-title">Strong’s</h3>
@@ -160,7 +160,7 @@
           </p>
         </div>
         <p id="lex-dialog-lemma" class="lex-dialog-lemma notranslate"></p>
-        <p id="lex-dialog-def" class="lex-dialog-def notranslate"></p>
+        <div id="lex-dialog-body" class="lex-dialog-body notranslate"></div>
         <p class="lex-dialog-attrib notranslate" id="lex-dialog-attrib"></p>
       </div>
     </dialog>
