@@ -10,6 +10,7 @@ npm run dev
 
 - `build:bible` downloads upstream sources and writes `public/bible-data/` (large; needs network).
 - `dev` starts Vite. Open the printed URL.
+- The **500-verse** “Verse of the day” data (`src/votd-500.json`) is **committed** with the repo. Run `npm run build-votd` only if you **edit** `scripts/votd-500-picks.mjs` (see [Verse-of-the-Day-Pool.md](Verse-of-the-Day-Pool.md)).
 
 Optional checks:
 

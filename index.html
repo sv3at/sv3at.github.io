@@ -7,51 +7,121 @@
     <link rel="stylesheet" href="/src/style.css" />
   </head>
   <body>
+    <div
+      class="gt-corner notranslate"
+      title="Translate page (Google)"
+      role="group"
+      aria-label="Page language: Google Translate"
+    >
+      <span class="gt-glyph" aria-hidden="true">🌐</span>
+      <div id="google_translate_element" class="gt-embed"></div>
+    </div>
     <div id="app" class="app">
-      <header class="header">
-        <h1 class="title">Simple Bible Reader</h1>
-        <p class="subtitle">
-          Entirely offline. Rebuild with <code>npm run build:bible</code>. Full documentation (wiki mirror):
-          <a href="https://github.com/sv3at/sv3at.github.io/blob/main/docs/wiki/Home.md">docs/wiki</a>
-          · Quick start:
-          <a href="https://github.com/sv3at/sv3at.github.io#readme">README</a>
-        </p>
+      <header class="header app-chrome notranslate" translate="no">
+        <h1 class="title" id="app-title">Simple Bible Reader</h1>
+        <section class="votd" id="votd" aria-labelledby="votd-heading" hidden>
+          <div class="votd-header">
+            <h2 class="votd-title" id="votd-heading">Verse of the day</h2>
+            <div class="votd-actions">
+              <button
+                type="button"
+                class="ui-hint-btn notranslate"
+                id="votd-hint-btn"
+                title="A large pool of well-known verses. One is chosen at random for this visit and stays the same if you simply reload, until you use the refresh control below."
+                aria-label="A large pool of well-known verses. One is chosen at random for this visit and stays the same if you simply reload, until you use the refresh control below."
+              >
+                i
+              </button>
+            </div>
+          </div>
+          <p class="votd-ref notranslate" id="votd-ref"></p>
+          <blockquote class="votd-text notranslate" id="votd-text" cite=""></blockquote>
+          <div class="votd-refresh-wrap">
+            <button
+              type="button"
+              class="votd-refresh-btn"
+              id="votd-refresh"
+              title="Another well-known verse (random)"
+              aria-label="Another well-known verse (random)"
+            >
+              <span class="votd-refresh-icon" aria-hidden="true">
+                <svg
+                  xmlns="http://www.w3.org/2000/svg"
+                  viewBox="0 0 24 24"
+                  width="20"
+                  height="20"
+                  fill="none"
+                  stroke="currentColor"
+                  stroke-width="2"
+                  stroke-linecap="round"
+                  stroke-linejoin="round"
+                >
+                  <path d="M3 12a9 9 0 0 1 9-9 9.75 9.75 0 0 1 6.74 2.74L21 3" />
+                  <path d="M21 3v5h-5" />
+                  <path d="M21 12a9 9 0 0 1-9 9 9.75 9.75 0 0 1-6.74-2.74L3 21" />
+                  <path d="M3 21v-5h5" />
+                </svg>
+              </span>
+            </button>
+          </div>
+          <p class="votd-goto-wrap">
+            <button type="button" id="votd-goto" class="btn btn-secondary">Open in reader</button>
+          </p>
+        </section>
         <form class="toolbar" id="toolbar" autocomplete="off">
           <label class="field field-book">
-            <span>Book</span>
-            <select id="book" name="book" disabled></select>
+            <span class="u-label" id="l-book">Book</span>
+            <select id="book" name="book" class="notranslate" disabled></select>
           </label>
-          <label class="field">
-            <span>Chapter</span>
-            <select id="chapter" name="chapter" disabled></select>
+          <label class="field field-chapter">
+            <span class="u-label" id="l-chapter">Chapter</span>
+            <select id="chapter" name="chapter" class="notranslate" disabled></select>
           </label>
-          <label class="field">
-            <span>Translation</span>
-            <select id="translation" name="translation"></select>
+          <label class="field field-translation" for="translation">
+            <div class="field-translation-top">
+              <span class="u-label" id="l-translation">Translation</span>
+              <button
+                type="button"
+                class="ui-hint-btn notranslate"
+                id="translation-hint"
+                title="The page language in the top right (Google Translate) follows this primary Bible. You can change the language in that menu."
+                aria-label="The page language in the top right (Google Translate) follows this primary Bible. You can change the language in that menu."
+              >
+                i
+              </button>
+            </div>
+            <select id="translation" name="translation" class="notranslate"></select>
           </label>
-          <label class="field">
-            <span>Parallel Reading</span>
+          <label class="field field-parallel-row">
+            <span class="u-label" id="l-parallel">Parallel</span>
             <label class="toggle">
               <input type="checkbox" id="compare-toggle" name="compare-toggle" />
-              <span>Enable side by side</span>
+              <span class="u-label" id="l-compare-cols">Show two columns</span>
             </label>
           </label>
-          <label class="field" id="compare-field" hidden>
-            <span>Second Translation</span>
-            <select id="translation-compare" name="translation-compare"></select>
+          <label class="field field-compare" id="compare-field" hidden>
+            <div class="field-compare-top">
+              <span class="u-label" id="l-second">Second Bible</span>
+            </div>
+            <select id="translation-compare" name="translation-compare" class="notranslate"></select>
           </label>
           <div class="nav-btns">
             <button type="button" id="prev" class="btn" disabled>← Previous</button>
-            <button type="button" id="next" class="btn" disabled>Next →</button>
-            <button type="button" id="random" class="btn btn-secondary" title="Random verse (NT)">
+            <button type="button" id="next" class="btn" title="Next →" disabled>Next →</button>
+            <button
+              type="button"
+              id="random"
+              class="btn btn-secondary"
+              title="Random verse (New Testament)"
+            >
               Random
             </button>
           </div>
         </form>
       </header>
       <main>
-        <div id="status" class="status" role="status" aria-live="polite"></div>
-        <article class="passage" id="passage" hidden>
+        <div id="status" class="status app-chrome notranslate" role="status" aria-live="polite" translate="no"></div>
+        <article class="passage notranslate" id="passage" hidden>
           <section class="passage-col">
             <h2 class="ref" id="ref"></h2>
             <ol class="verses" id="verses"></ol>
@@ -61,21 +131,37 @@
             <ol class="verses" id="verses-compare"></ol>
           </section>
         </article>
-        <p class="footnote" id="footnote"></p>
+        <p class="footnote notranslate" id="footnote"></p>
+        <p class="subtitle">
+          Entirely offline. Rebuild with <code>npm run build:bible</code>. Full documentation (wiki mirror):
+          <a href="https://github.com/sv3at/sv3at.github.io/blob/main/docs/wiki/Home.md">docs/wiki</a>
+          · Quick start:
+          <a href="https://github.com/sv3at/sv3at.github.io#readme">README</a>
+          · Developed by:
+          <a href="https://www.fotw.au">@fotwAU</a>
+        </p>
+
       </main>
     </div>
     <dialog id="lex-dialog" class="lex-dialog" aria-labelledby="lex-dialog-title">
       <div class="lex-dialog-inner">
-        <h3 id="lex-dialog-title" class="lex-dialog-title">Strong’s</h3>
-        <p id="lex-dialog-lemma" class="lex-dialog-lemma"></p>
-        <p id="lex-dialog-def" class="lex-dialog-def"></p>
-        <p class="lex-dialog-actions">
-          <a id="lex-dialog-step" class="lex-dialog-link" href="#" target="_blank" rel="noopener noreferrer"
-            >Open in STEP Bible</a
-          >
-          <button type="button" id="lex-dialog-close" class="btn btn-secondary">Close</button>
-        </p>
-        <p class="lex-dialog-attrib" id="lex-dialog-attrib"></p>
+        <div class="app-chrome notranslate" translate="no">
+          <h3 id="lex-dialog-title" class="lex-dialog-title">Strong’s</h3>
+          <p class="lex-dialog-actions">
+            <a
+              id="lex-dialog-step"
+              class="lex-dialog-link"
+              href="#"
+              target="_blank"
+              rel="noopener noreferrer"
+              >Open in STEP Bible</a
+            >
+            <button type="button" id="lex-dialog-close" class="btn btn-secondary">Close</button>
+          </p>
+        </div>
+        <p id="lex-dialog-lemma" class="lex-dialog-lemma notranslate"></p>
+        <p id="lex-dialog-def" class="lex-dialog-def notranslate"></p>
+        <p class="lex-dialog-attrib notranslate" id="lex-dialog-attrib"></p>
       </div>
     </dialog>
     <script type="module" src="/src/main.js"></script>

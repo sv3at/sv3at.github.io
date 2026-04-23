@@ -11,6 +11,7 @@ Snapshot of how the app works today and what to preserve when changing code.
 - Parallel Psalms: Synodal vs MT/English chapter mapping when `PSA` is open.
 - Verse highlight mirrors across columns; word highlight is **single-side only**.
 - Verse auto-scroll runs only when verse focus is intentionally set (not on word click).
+- **Verse of the day:** 500 bundled refs (`src/votd-500.json`), one verse per **browser tab session** (`sessionStorage`); not calendar-day in the main UI. Details: [Verse-of-the-Day-Pool.md](Verse-of-the-Day-Pool.md).
 
 ## Key files
 
@@ -24,6 +25,8 @@ Snapshot of how the app works today and what to preserve when changing code.
 | `scripts/kjv-strongs.mjs` | Bolls `<S>…</S>` parsing |
 | `scripts/strong-lexicon-vm.mjs` | VM dictionary loader |
 | `scripts/usfm-books.mjs` | USFM list and Bolls book map |
+| `src/votd-500.json` | 500-verse VOTD pool; rebuild with `npm run build-votd` |
+| `src/verse-of-day-refs.mjs` | Imports pool + session index / random helpers |
 | `public/bible-data/` | Generated runtime bundle |
 | `tests/*.test.mjs` | Vitest |
 
@@ -33,6 +36,7 @@ Snapshot of how the app works today and what to preserve when changing code.
 npm install
 npm test
 npm run build:bible
+npm run build-votd
 npm run dev
 npm run build && npm run preview
 ```
@@ -55,6 +59,8 @@ npm run build && npm run preview
 | `tests/strong-lexicon-vm.test.mjs` | VM loader |
 | `tests/usfm-books.test.mjs` | Canon map |
 | `tests/manifest-shape.test.mjs` | Manifest schema; optional bundle checks |
+| `tests/verse-of-day-refs.test.mjs` | 500-verse list + VOTD session + daily index |
+| `tests/google-translate-lang.test.mjs` | Primary Bible + VOTD `(i)` hint language |
 
 Tests pass without `public/bible-data`; bundle checks skip if missing.
 

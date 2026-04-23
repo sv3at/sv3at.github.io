@@ -36,6 +36,12 @@ jobs:
       - name: Run tests
         run: npm test
 
+      - name: Install Playwright (Chromium)
+        run: npx playwright install --with-deps chromium
+
+      - name: E2E tests
+        run: npm run test:e2e
+
       # Uses already-committed public/bible-data output.
       # Rebuild locally with `npm run build:bible` when data sources change.
       - name: Build app
