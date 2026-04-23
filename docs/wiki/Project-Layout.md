@@ -11,6 +11,11 @@
 | `scripts/build-bible-data.mjs` | Download + normalize translations + lexicon |
 | `scripts/kjv-strongs.mjs` | Bolls KJV → plain text + Strong’s segments |
 | `scripts/usfm-books.mjs` | USFM order and Bolls book number map |
+| `scripts/votd-500-picks.mjs` | 500-verse VOTD layout; edit, then `npm run build-votd` |
+| `scripts/build-votd-500.mjs` | Validate picks vs `t-kjv.json` → `src/votd-500.json` |
+| `scripts/gen-picks-layout.mjs` | Optional: regenerate `votd-500-picks` from KJV |
+| `src/votd-500.json` | 500 `{id,c,v}` for “Verse of the day” (committed; source for regen) |
+| `src/verse-of-day-refs.mjs` | Imports pool + VOTD session + random index helpers |
 | `scripts/strong-lexicon-vm.mjs` | VM loader for Open Scriptures dictionary scripts |
 | `.github/workflows/deploy-pages.yml` | GitHub Pages deploy (optional) |
 | `docs/wiki/` | Detailed documentation (this wiki mirror) |

@@ -1,83 +1,73 @@
 /**
- * USFM + chapter + verse. Single verses only; pool is a mix of OT/NT.
- * Tuned for 66-book Protestant canons in bundled translations.
+ * 500 single-verse refs in `votd-500.json` (8 per OT book GEN..ZEC, 7 per MAL..REV).
+ * Rebuild: `npm run build-votd` (see `scripts/votd-500-picks.mjs`). Docs: `docs/wiki/Verse-of-the-Day-Pool.md`.
+ * Session index for the reader; `getDailyVotdIndex` for tests only.
  */
-export const FAMOUS_VERSE_REFS = [
-  { id: "GEN", c: 1, v: 1 },
-  { id: "JHN", c: 1, v: 1 },
-  { id: "JHN", c: 3, v: 16 },
-  { id: "JHN", c: 14, v: 6 },
-  { id: "JHN", c: 11, v: 25 },
-  { id: "JHN", c: 8, v: 12 },
-  { id: "PSA", c: 23, v: 1 },
-  { id: "PSA", c: 119, v: 105 },
-  { id: "PSA", c: 46, v: 10 },
-  { id: "PSA", c: 121, v: 1 },
-  { id: "PSA", c: 1, v: 1 },
-  { id: "PSA", c: 27, v: 1 },
-  { id: "PSA", c: 100, v: 4 },
-  { id: "PSA", c: 19, v: 14 },
-  { id: "ROM", c: 8, v: 28 },
-  { id: "ROM", c: 3, v: 23 },
-  { id: "ROM", c: 5, v: 8 },
-  { id: "ROM", c: 6, v: 23 },
-  { id: "ROM", c: 12, v: 2 },
-  { id: "ROM", c: 8, v: 31 },
-  { id: "MAT", c: 5, v: 9 },
-  { id: "MAT", c: 6, v: 33 },
-  { id: "MAT", c: 5, v: 16 },
-  { id: "MAT", c: 11, v: 28 },
-  { id: "MAT", c: 6, v: 34 },
-  { id: "LUK", c: 2, v: 10 },
-  { id: "LUK", c: 6, v: 31 },
-  { id: "1CO", c: 13, v: 4 },
-  { id: "1CO", c: 10, v: 13 },
-  { id: "1CO", c: 6, v: 19 },
-  { id: "2CO", c: 4, v: 7 },
-  { id: "2CO", c: 5, v: 17 },
-  { id: "GAL", c: 2, v: 20 },
-  { id: "EPH", c: 2, v: 8 },
-  { id: "EPH", c: 3, v: 20 },
-  { id: "PHP", c: 4, v: 13 },
-  { id: "PHP", c: 4, v: 6 },
-  { id: "PHP", c: 1, v: 6 },
-  { id: "PHP", c: 2, v: 3 },
-  { id: "COL", c: 3, v: 23 },
-  { id: "1TH", c: 5, v: 16 },
-  { id: "2TI", c: 1, v: 7 },
-  { id: "HEB", c: 11, v: 1 },
-  { id: "HEB", c: 13, v: 5 },
-  { id: "JAS", c: 1, v: 2 },
-  { id: "JAS", c: 4, v: 7 },
-  { id: "1PE", c: 5, v: 7 },
-  { id: "1PE", c: 3, v: 8 },
-  { id: "1JN", c: 4, v: 7 },
-  { id: "1JN", c: 4, v: 19 },
-  { id: "1JN", c: 1, v: 1 },
-  { id: "REV", c: 3, v: 20 },
-  { id: "PRO", c: 3, v: 5 },
-  { id: "PRO", c: 3, v: 6 },
-  { id: "ISA", c: 40, v: 31 },
-  { id: "ISA", c: 41, v: 10 },
-  { id: "ISA", c: 6, v: 8 },
-  { id: "JER", c: 29, v: 11 },
-  { id: "JOS", c: 1, v: 9 },
-  { id: "JOS", c: 1, v: 7 },
-  { id: "RUT", c: 1, v: 16 },
-  { id: "DEU", c: 6, v: 4 },
-  { id: "LUK", c: 1, v: 37 },
-  { id: "JHN", c: 3, v: 17 },
-  { id: "JHN", c: 1, v: 12 },
-  { id: "JHN", c: 3, v: 36 },
-  { id: "ROM", c: 10, v: 9 },
-  { id: "ROM", c: 1, v: 16 },
-  { id: "JHN", c: 3, v: 30 },
-];
+import FAMOUS_VERSE_REFS from "./votd-500.json" with { type: "json" };
+
+export { FAMOUS_VERSE_REFS };
 
 const LEN = FAMOUS_VERSE_REFS.length;
 
+export const VOTD_SESSION_KEY = "fotw-bible-votd-index";
+
+/** When `sessionStorage` is missing or fails, keep one index per page load. */
+let memoryVotdIndex = null;
+
+/**
+ * One random verse per tab session, stable across reloads; cleared when the tab
+ * is closed. A new session gets a new random pick. When storage is not available
+ * the index is still stable for the current page.
+ * @returns {number}
+ */
+export function getSessionVotdIndex() {
+  if (memoryVotdIndex != null) return memoryVotdIndex;
+  if (typeof window === "undefined" || !window.sessionStorage) {
+    memoryVotdIndex = Math.floor(Math.random() * LEN);
+    return memoryVotdIndex;
+  }
+  try {
+    const s = window.sessionStorage.getItem(VOTD_SESSION_KEY);
+    if (s != null) {
+      const n = parseInt(s, 10);
+      if (Number.isFinite(n) && n >= 0 && n < LEN) {
+        memoryVotdIndex = n;
+        return n;
+      }
+    }
+  } catch {
+    /* use fresh random + memory */
+  }
+  const i = Math.floor(Math.random() * LEN);
+  memoryVotdIndex = i;
+  try {
+    window.sessionStorage.setItem(VOTD_SESSION_KEY, String(i));
+  } catch {
+    /* still have memoryVotdIndex */
+  }
+  return i;
+}
+
+/**
+ * @param {number} i
+ */
+export function setSessionVotdIndex(i) {
+  if (i >= 0 && i < LEN) {
+    memoryVotdIndex = i;
+  }
+  if (typeof window === "undefined" || !window.sessionStorage) return;
+  try {
+    if (i >= 0 && i < LEN) {
+      window.sessionStorage.setItem(VOTD_SESSION_KEY, String(i));
+    }
+  } catch {
+    /* ignore */
+  }
+}
+
 /**
  * Deterministic per calendar day (local timezone) index into FAMOUS_VERSE_REFS.
+ * Kept for tests; the reader uses the session index instead.
  * @param {Date} d
  */
 export function getDailyVotdIndex(d = new Date()) {

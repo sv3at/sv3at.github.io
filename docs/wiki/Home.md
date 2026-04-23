@@ -17,6 +17,7 @@ This folder is a **mirror** of what you can publish as the GitHub **Wiki** for t
 | GitHub Pages deploy                   | [GitHub-Pages.md](GitHub-Pages.md)                               |
 | Licenses                              | [Licenses.md](Licenses.md)                                       |
 | Custom translation JSON               | [Custom-Bible-JSON.md](Custom-Bible-JSON.md)                     |
+| Verse of the day (500-verse pool)     | [Verse-of-the-Day-Pool.md](Verse-of-the-Day-Pool.md)           |
 | Fork + Cursor workflow                | [Development-Fork-and-Cursor.md](Development-Fork-and-Cursor.md) |
 | Architecture and handoff              | [Architecture-and-Handoff.md](Architecture-and-Handoff.md)       |
 

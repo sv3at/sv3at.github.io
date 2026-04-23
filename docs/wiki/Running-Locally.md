@@ -10,6 +10,17 @@ npm run dev
 
 Vite serves `public/` at the site root, so Bible data is at `/bible-data/…`.
 
+## End-to-end (Playwright)
+
+`npm test` runs Vitest only. For browser smoke tests (headless Chromium), run after installing browsers once:
+
+```bash
+npx playwright install chromium
+npm run test:e2e
+```
+
+The e2e suite starts Vite on port 5173 and needs committed `public/bible-data/manifest.json` (from `npm run build:bible`). If the manifest is missing, those cases are skipped.
+
 ## Python `http.server`
 
 Run from the **project root** (folder with `index.html` and `public/`):

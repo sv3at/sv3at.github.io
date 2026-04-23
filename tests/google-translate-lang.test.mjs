@@ -1,6 +1,6 @@
 import { describe, it, expect } from "vitest";
 import { inferGoogleLangForPrimaryBible } from "../src/google-translate.mjs";
-import { getPrimaryBibleUiHintText } from "../src/translation-hint-i18n.mjs";
+import { getPrimaryBibleUiHintText, getVotdPoolHintText } from "../src/translation-hint-i18n.mjs";
 
 describe("inferGoogleLangForPrimaryBible", () => {
   it("maps known package ids to Google language codes", () => {
@@ -23,5 +23,17 @@ describe("getPrimaryBibleUiHintText", () => {
   it("returns an English hint for an English-typical id", () => {
     const t = getPrimaryBibleUiHintText({ id: "kjv" });
     expect(t).toContain("The page language");
+  });
+});
+
+describe("getVotdPoolHintText", () => {
+  it("returns Russian for Synodal", () => {
+    const t = getVotdPoolHintText({ id: "synodal" });
+    expect(t).toMatch(/[А-Яа-яЁё]/u);
+  });
+
+  it("returns English for KJV", () => {
+    const t = getVotdPoolHintText({ id: "kjv" });
+    expect(t).toMatch(/verses|verse|pool|well-known/i);
   });
 });

@@ -3,18 +3,19 @@
  * Plain `python -m http.server` from the project root serves files as-is → `/public/bible-data/…`.
  */
 import { cleanVerseText, versePlain, isStrongsVerseCell, stepStrongUrl, lookupLexEntry } from "./verse-model.mjs";
-import { FAMOUS_VERSE_REFS, getDailyVotdIndex, pickRandomVotdIndex } from "./verse-of-day-refs.mjs";
+import {
+  FAMOUS_VERSE_REFS,
+  getSessionVotdIndex,
+  setSessionVotdIndex,
+  pickRandomVotdIndex,
+} from "./verse-of-day-refs.mjs";
 import {
   BIBLEAPP_TRANSLATE_READY,
   initGoogleTranslate,
   scheduleSyncPageLanguageToPrimaryBible,
 } from "./google-translate.mjs";
-import { getPrimaryBibleUiHintText } from "./translation-hint-i18n.mjs";
-
-const VOTD_MISS =
-  "This verse is not available in the current translation (limited canon or empty cell).";
-const VOTD_HINT_AFTER =
-  "Random pick from the same set. The daily line-up still updates at local midnight (reload the page).";
+import { getPrimaryBibleUiHintText, getVotdPoolHintText } from "./translation-hint-i18n.mjs";
+import { getUiBundle, applyAppChromeI18n } from "./ui-i18n.mjs";
 
 let dataBase = "/bible-data/";
 
@@ -72,22 +73,28 @@ const els = {
   votd: $("votd"),
   votdRef: $("votd-ref"),
   votdText: $("votd-text"),
-  votdNew: $("votd-new"),
+  votdRefresh: $("votd-refresh"),
   votdGoto: $("votd-goto"),
-  votdHint: $("votd-hint"),
+  votdHintBtn: $("votd-hint-btn"),
   translationHint: $("translation-hint"),
 };
 
-function updatePrimaryBibleHint() {
-  const el = els.translationHint;
-  if (!el) return;
-  const t = getPrimaryBibleUiHintText(currentMeta);
-  el.setAttribute("title", t);
-  el.setAttribute("aria-label", t);
+function updateBibleHelpHints() {
+  const tTr = getPrimaryBibleUiHintText(currentMeta);
+  if (els.translationHint) {
+    els.translationHint.setAttribute("title", tTr);
+    els.translationHint.setAttribute("aria-label", tTr);
+  }
+  const tVotd = getVotdPoolHintText(currentMeta);
+  if (els.votdHintBtn) {
+    els.votdHintBtn.setAttribute("title", tVotd);
+    els.votdHintBtn.setAttribute("aria-label", tVotd);
+  }
+  applyAppChromeI18n(currentMeta);
 }
 
 /** @type {number} */
-let votdListIndex = getDailyVotdIndex();
+let votdListIndex = getSessionVotdIndex();
 
 /** New Testament book ids (USFM) for “Random” */
 const NT_IDS = new Set(
@@ -127,9 +134,10 @@ async function ensureLexicon() {
 }
 
 async function showLexiconFor(strongId) {
+  const u = getUiBundle(currentMeta);
   const lex = await ensureLexicon();
   const row = lookupLexEntry(lex, strongId);
-  els.lexTitle.textContent = `Strong’s ${strongId}`;
+  els.lexTitle.textContent = u.lexStrongsTitle(strongId);
   if (row && (row.l || row.t || row.d)) {
     const bits = [];
     if (row.l) bits.push(row.l);
@@ -137,12 +145,11 @@ async function showLexiconFor(strongId) {
     els.lexLemma.textContent = bits.join(" ") || "—";
     els.lexDef.textContent = row.d || "—";
   } else {
-    els.lexLemma.textContent = "No local gloss for this entry.";
-    els.lexDef.textContent = "Use STEP Bible for full lexicon and manuscript links.";
+    els.lexLemma.textContent = u.lexNoGloss;
+    els.lexDef.textContent = u.lexUseStep;
   }
   els.lexStep.href = stepStrongUrl(strongId);
-  els.lexAttrib.textContent =
-    "Local glosses are a slim extract from Open Scriptures Strong’s Hebrew/Greek dictionaries (CC BY-SA).";
+  els.lexAttrib.textContent = u.lexAttrib;
   if (els.lexDialog.showModal) els.lexDialog.showModal();
   else window.alert(`${strongId}: ${els.lexLemma.textContent}`);
 }
@@ -276,8 +283,8 @@ async function selectTranslation(m) {
   currentData = d;
   currentDataFile = m.dataFile;
   if (!d.books) {
-    setStatus("Invalid data file (no books).", true);
-    updatePrimaryBibleHint();
+    setStatus(getUiBundle(m).invalidData, true);
+    updateBibleHelpHints();
     return;
   }
   if (!currentBookId || !d.books[currentBookId]) {
@@ -288,19 +295,20 @@ async function selectTranslation(m) {
   els.book.value = currentBookId;
   if (currentChapterNum < 1) currentChapterNum = 1;
   fillChapterSelect();
-  updatePrimaryBibleHint();
+  updateBibleHelpHints();
 }
 
 async function selectCompareTranslation(m) {
   compareMeta = m;
   compareData = await loadBlobJson(m.dataFile);
   if (!compareData.books) {
-    setStatus("Invalid second translation data file (no books).", true);
+    setStatus(getUiBundle(currentMeta).invalidSecond, true);
     return;
   }
 }
 
 function appendStrongsChips(container, ids) {
+  const u = getUiBundle(currentMeta);
   for (const id of ids) {
     const a = document.createElement("a");
     a.className = "strongs";
@@ -308,7 +316,7 @@ function appendStrongsChips(container, ids) {
     a.target = "_blank";
     a.rel = "noopener noreferrer";
     a.textContent = id;
-    a.title = `${id} — click for gloss; Ctrl+click opens STEP Bible`;
+    a.title = u.strongsChipTitle(id);
     a.addEventListener("click", (ev) => {
       ev.stopPropagation();
       if (ev.ctrlKey || ev.metaKey || ev.shiftKey || ev.altKey || ev.button !== 0) return;
@@ -374,7 +382,7 @@ function renderVerseList(data, meta, refEl, listEl, chapterNum, side) {
     listEl.replaceChildren();
     const empty = document.createElement("li");
     empty.className = "verse verse-missing";
-    empty.textContent = "Missing chapter in this translation.";
+    empty.textContent = getUiBundle(currentMeta).missingChapter;
     listEl.appendChild(empty);
     return;
   }
@@ -419,12 +427,13 @@ async function renderPassage() {
   if (currentData._strongs || (compareEnabled && compareData && compareData._strongs)) void ensureLexicon();
 
   const primaryChapterNum = currentChapterNum;
+  const u = getUiBundle(currentMeta);
   renderVerseList(currentData, currentMeta, els.ref, els.verses, primaryChapterNum, "primary");
 
   let foot = "";
   const src = (currentMeta && currentMeta.source) || (currentData._meta && currentData._meta.source) || "";
   const lic = (currentMeta && currentMeta.license) || (currentData._meta && currentData._meta.license) || "";
-  foot = `Primary source: ${src} · License note: ${lic} · All text stored locally.`;
+  foot = `${u.lblPrimary} ${src} · ${u.lblLicense} ${lic} · ${u.lblStored}`;
 
   const parallelActive = !!(compareEnabled && compareData && compareMeta);
   els.passage.classList.toggle("parallel-enabled", parallelActive);
@@ -433,24 +442,23 @@ async function renderPassage() {
     const compareChapterNum = mapChapterForParallel(currentMeta, compareMeta, currentBookId, currentChapterNum);
     renderVerseList(compareData, compareMeta, els.refCompare, els.versesCompare, compareChapterNum, "compare");
     if (compareChapterNum !== currentChapterNum && currentBookId === "PSA") {
-      const leftName = (currentMeta && currentMeta.name) || "Primary";
-      const rightName = (compareMeta && compareMeta.name) || "Second";
-      foot += ` Psalm mapping: ${leftName} ${currentChapterNum} ↔ ${rightName} ${compareChapterNum}.`;
+      const leftName = (currentMeta && currentMeta.name) || u.primaryName;
+      const rightName = (compareMeta && compareMeta.name) || u.secondName;
+      foot += u.fmtPsalmMap(leftName, String(currentChapterNum), rightName, String(compareChapterNum));
     }
     const csrc = (compareMeta && compareMeta.source) || (compareData._meta && compareData._meta.source) || "";
     const clic = (compareMeta && compareMeta.license) || (compareData._meta && compareData._meta.license) || "";
-    foot += ` Second source: ${csrc} · License note: ${clic}.`;
+    foot += ` ${u.secondIntro} ${csrc} · ${u.license2} ${clic}.`;
   } else {
     els.refCompare.textContent = "";
     els.versesCompare.replaceChildren();
   }
 
   if (currentData._strongs || (compareEnabled && compareData && compareData._strongs)) {
-    foot +=
-      " Per-word Strong’s numbers link to STEP Bible; local glosses from Open Scriptures (CC BY-SA), see README.";
+    foot += u.strFootStrongs;
   }
   if (highlightWordRef) {
-    foot += " Word highlight is active on one side.";
+    foot += u.strFootWordHl;
   }
 
   els.footnote.textContent = foot;
@@ -465,7 +473,7 @@ async function renderPassage() {
 }
 
 async function loadPassage() {
-  setStatus("…");
+  setStatus(getUiBundle(currentMeta).statusBusy);
   els.passage.hidden = true;
   try {
     await renderPassage();
@@ -570,7 +578,7 @@ function renderVotd() {
   els.votdRef.textContent = `${bookName} ${ref.c}:${ref.v}`;
   const t = getVersePlainForRef(currentData, ref);
   if (t == null || !cleanVerseText(t)) {
-    els.votdText.textContent = VOTD_MISS;
+    els.votdText.textContent = getUiBundle(currentMeta).votdMiss;
   } else {
     els.votdText.textContent = cleanVerseText(t);
   }
@@ -614,7 +622,7 @@ els.compareToggle.addEventListener("change", async () => {
 els.translationCompare.addEventListener("change", async () => {
   if (!compareEnabled) return;
   if (els.translationCompare.value === els.translation.value) {
-    setStatus("Pick a different second translation for parallel reading.", true);
+    setStatus(getUiBundle(currentMeta).pickDifferentCompare, true);
     return;
   }
   highlightWordRef = "";
@@ -651,12 +659,12 @@ els.lexClose.addEventListener("click", () => {
 });
 
 els.random.addEventListener("click", () => {
-  setStatus("…");
+  setStatus(getUiBundle(currentMeta).statusBusy);
   highlightWordRef = "";
   highlightWordSide = "";
   const p = pickRandomVerse();
   if (!p) {
-    setStatus("Could not pick a New Testament verse (is this translation NT only empty?).", true);
+    setStatus(getUiBundle(currentMeta).randomNtFail, true);
     return;
   }
   currentBookId = p.bookId;
@@ -669,20 +677,29 @@ els.random.addEventListener("click", () => {
   void loadPassage();
 });
 
-els.votdNew.addEventListener("click", () => {
-  votdListIndex = pickRandomVotdIndex(votdListIndex);
-  renderVotd();
-  if (els.votdHint) els.votdHint.textContent = VOTD_HINT_AFTER;
-});
+if (els.votdRefresh) {
+  els.votdRefresh.addEventListener("click", () => {
+    votdListIndex = pickRandomVotdIndex(votdListIndex);
+    setSessionVotdIndex(votdListIndex);
+    renderVotd();
+  });
+}
+
+if (els.votdHintBtn) {
+  els.votdHintBtn.addEventListener("click", (e) => {
+    e.preventDefault();
+    setStatus(getVotdPoolHintText(currentMeta), false);
+  });
+}
 
 els.votdGoto.addEventListener("click", () => {
   const ref = FAMOUS_VERSE_REFS[votdListIndex];
   if (!ref || !currentData) return;
   if (!currentData.books[ref.id]) {
-    setStatus("This passage is not available in the current translation.", true);
+    setStatus(getUiBundle(currentMeta).passageUnavailable, true);
     return;
   }
-  setStatus("…");
+  setStatus(getUiBundle(currentMeta).statusBusy);
   currentBookId = ref.id;
   currentChapterNum = ref.c;
   highlightVerse = ref.v;
@@ -697,11 +714,11 @@ els.votdGoto.addEventListener("click", () => {
 
 async function init() {
   try {
-    setStatus("Loading index…");
+    setStatus(getUiBundle(null).loading);
     dataBase = await resolveDataBase();
     manifest = await fetchJson(`${dataBase}manifest.json`);
     if (!manifest.translations || manifest.translations.length === 0) {
-      setStatus("No translations. Run: npm run build:bible", true);
+      setStatus(getUiBundle(null).noTranslations, true);
       return;
     }
     const enFirst = (a, b) => {
@@ -739,11 +756,9 @@ async function init() {
     await loadPassage();
     scheduleSyncPageLanguageToPrimaryBible(m);
     renderVotd();
+    updateBibleHelpHints();
   } catch (e) {
-    setStatus(
-      `Could not load Bible data from ${dataBase} (also tried /bible-data/ and /public/bible-data/). Run: npm run build:bible. (${e.message})`,
-      true,
-    );
+    setStatus(getUiBundle(null).fmtLoadError(dataBase, e.message), true);
   }
 }
 
