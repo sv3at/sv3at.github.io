@@ -3,6 +3,18 @@
  * Plain `python -m http.server` from the project root serves files as-is → `/public/bible-data/…`.
  */
 import { cleanVerseText, versePlain, isStrongsVerseCell, stepStrongUrl, lookupLexEntry } from "./verse-model.mjs";
+import { FAMOUS_VERSE_REFS, getDailyVotdIndex, pickRandomVotdIndex } from "./verse-of-day-refs.mjs";
+import {
+  BIBLEAPP_TRANSLATE_READY,
+  initGoogleTranslate,
+  scheduleSyncPageLanguageToPrimaryBible,
+} from "./google-translate.mjs";
+import { getPrimaryBibleUiHintText } from "./translation-hint-i18n.mjs";
+
+const VOTD_MISS =
+  "This verse is not available in the current translation (limited canon or empty cell).";
+const VOTD_HINT_AFTER =
+  "Random pick from the same set. The daily line-up still updates at local midnight (reload the page).";
 
 let dataBase = "/bible-data/";
 
@@ -57,7 +69,25 @@ const els = {
   lexStep: $("lex-dialog-step"),
   lexClose: $("lex-dialog-close"),
   lexAttrib: $("lex-dialog-attrib"),
+  votd: $("votd"),
+  votdRef: $("votd-ref"),
+  votdText: $("votd-text"),
+  votdNew: $("votd-new"),
+  votdGoto: $("votd-goto"),
+  votdHint: $("votd-hint"),
+  translationHint: $("translation-hint"),
 };
+
+function updatePrimaryBibleHint() {
+  const el = els.translationHint;
+  if (!el) return;
+  const t = getPrimaryBibleUiHintText(currentMeta);
+  el.setAttribute("title", t);
+  el.setAttribute("aria-label", t);
+}
+
+/** @type {number} */
+let votdListIndex = getDailyVotdIndex();
 
 /** New Testament book ids (USFM) for “Random” */
 const NT_IDS = new Set(
@@ -247,6 +277,7 @@ async function selectTranslation(m) {
   currentDataFile = m.dataFile;
   if (!d.books) {
     setStatus("Invalid data file (no books).", true);
+    updatePrimaryBibleHint();
     return;
   }
   if (!currentBookId || !d.books[currentBookId]) {
@@ -257,6 +288,7 @@ async function selectTranslation(m) {
   els.book.value = currentBookId;
   if (currentChapterNum < 1) currentChapterNum = 1;
   fillChapterSelect();
+  updatePrimaryBibleHint();
 }
 
 async function selectCompareTranslation(m) {
@@ -511,6 +543,40 @@ async function syncCompareToSelection() {
   if (m) await selectCompareTranslation(m);
 }
 
+function getVersePlainForRef(d, { id, c, v }) {
+  const b = d.books[id];
+  if (!b || !b.ch[c]) return null;
+  const chA = b.ch[c];
+  if (v < 1 || v > chA.length) return null;
+  const cell = chA[v - 1];
+  if (cell == null) return null;
+  return versePlain(cell);
+}
+
+function renderVotd() {
+  if (!els.votd || !els.votdText || !els.votdRef) return;
+  if (!currentData) {
+    els.votd.hidden = true;
+    return;
+  }
+  const ref = FAMOUS_VERSE_REFS[votdListIndex];
+  if (!ref) {
+    els.votd.hidden = true;
+    return;
+  }
+  els.votd.hidden = false;
+  const b = currentData.books[ref.id];
+  const bookName = b ? b.n : ref.id;
+  els.votdRef.textContent = `${bookName} ${ref.c}:${ref.v}`;
+  const t = getVersePlainForRef(currentData, ref);
+  if (t == null || !cleanVerseText(t)) {
+    els.votdText.textContent = VOTD_MISS;
+  } else {
+    els.votdText.textContent = cleanVerseText(t);
+  }
+  if (els.votdText) els.votdText.setAttribute("cite", `${ref.id} ${ref.c}:${ref.v}`);
+}
+
 // --- event listeners ---
 els.translation.addEventListener("change", async () => {
   highlightVerse = null;
@@ -528,6 +594,8 @@ els.translation.addEventListener("change", async () => {
     }
     await syncCompareToSelection();
     await loadPassage();
+    scheduleSyncPageLanguageToPrimaryBible(m);
+    renderVotd();
   }
 });
 
@@ -601,6 +669,32 @@ els.random.addEventListener("click", () => {
   void loadPassage();
 });
 
+els.votdNew.addEventListener("click", () => {
+  votdListIndex = pickRandomVotdIndex(votdListIndex);
+  renderVotd();
+  if (els.votdHint) els.votdHint.textContent = VOTD_HINT_AFTER;
+});
+
+els.votdGoto.addEventListener("click", () => {
+  const ref = FAMOUS_VERSE_REFS[votdListIndex];
+  if (!ref || !currentData) return;
+  if (!currentData.books[ref.id]) {
+    setStatus("This passage is not available in the current translation.", true);
+    return;
+  }
+  setStatus("…");
+  currentBookId = ref.id;
+  currentChapterNum = ref.c;
+  highlightVerse = ref.v;
+  highlightWordRef = "";
+  highlightWordSide = "";
+  pendingVerseScroll = true;
+  els.book.value = currentBookId;
+  fillChapterSelect();
+  els.chapter.value = String(currentChapterNum);
+  void loadPassage();
+});
+
 async function init() {
   try {
     setStatus("Loading index…");
@@ -643,6 +737,8 @@ async function init() {
     if (els.chapter.querySelector(`option[value="3"]`)) els.chapter.value = "3";
     else currentChapterNum = parseInt(els.chapter.value, 10) || 1;
     await loadPassage();
+    scheduleSyncPageLanguageToPrimaryBible(m);
+    renderVotd();
   } catch (e) {
     setStatus(
       `Could not load Bible data from ${dataBase} (also tried /bible-data/ and /public/bible-data/). Run: npm run build:bible. (${e.message})`,
@@ -651,4 +747,12 @@ async function init() {
   }
 }
 
+if (typeof window !== "undefined") {
+  window.addEventListener(BIBLEAPP_TRANSLATE_READY, () => {
+    if (currentMeta) {
+      scheduleSyncPageLanguageToPrimaryBible(/** @type {any} */ (currentMeta));
+    }
+  });
+}
 void init();
+initGoogleTranslate();
